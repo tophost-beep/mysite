@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Exclusive Live Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: linear-gradient(135deg, #0f051d, #290b4e, #0a0214);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #fff;
+            padding: 15px 15px 100px 15px;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 25px 15px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+        .live-counter {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px 14px;
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+        }
+        .green-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff66;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff66;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 0.3; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.3; transform: scale(0.9); }
+        }
+        .profile-container {
+            position: relative;
+            width: 95px;
+            height: 95px;
+            margin: 0 auto 15px;
+        }
+        .profile-bg-glow {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            width: 103px;
+            height: 103px;
+            background: linear-gradient(45deg, #ff007f, #00f0ff);
+            border-radius: 50%;
+            z-index: 1;
+            filter: blur(6px);
+            animation: spinGlow 4s linear infinite;
+        }
+        @keyframes spinGlow {
+            100% { transform: rotate(360deg); }
+        }
+        .profile-img {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #1a0933;
+            z-index: 2;
+        }
+        .profile-blur-overlay {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: calc(100% - 6px);
+            height: calc(100% - 6px);
+            border-radius: 50%;
+            background: rgba(255, 0, 127, 0.1);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            z-index: 3;
+            pointer-events: none;
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(to right, #fff, #b39ddb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tagline {
+            font-size: 13px;
+            color: #a19da8;
+            margin-bottom: 25px;
+        }
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .smart-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 15px;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            background: linear-gradient(90deg, rgba(255, 0, 127, 0.8), rgba(128, 0, 255, 0.8));
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(255, 0, 127, 0.25);
+            animation: pulseBtn 2.5s infinite;
+        }
+        .smart-btn:hover, .smart-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
+        }
+        @keyframes pulseBtn {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.01); box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4); }
+            100% { transform: scale(1); }
+        }
+        .smart-btn:nth-child(2) { animation-delay: 0.2s; background: linear-gradient(90deg, #8000ff, #00f0ff); box-shadow: 0 4px 12px rgba(128, 0, 255, 0.25); }
+        .smart-btn:nth-child(3) { animation-delay: 0.4s; }
+        .smart-btn:nth-child(4) { animation-delay: 0.6s; background: linear-gradient(90deg, #FFFC00, #ff007f); color: #000 !important; font-weight: 800; box-shadow: 0 4px 12px rgba(255, 252, 0, 0.3); }
+        .smart-btn:nth-child(5) { animation-delay: 0.8s; background: linear-gradient(90deg, #00f0ff, #ee1d52); box-shadow: 0 4px 12px rgba(0, 240, 255, 0.3); }
+        
+        .member-gallery-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #00ff66;
+            text-align: left;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+        }
+        .members-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .member-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+        }
+        .status-tag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .status-tag.free {
+            background: #00ff66;
+            color: #100624;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+        .status-tag.premium {
+            background: #ff007f;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+            animation: blinkText 1s infinite;
+        }
+        .slider-box {
+            width: 100%;
+            height: 110px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .slider-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+        }
+        .slider-box img.active { opacity: 1; }
+        .member-name {
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mini-join-btn {
+            display: block;
+            background: linear-gradient(90deg, #ff007f, #8000ff);
+            color: white;
+            font-size: 11px;
+            font-weight: 800;
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: 30px;
+            text-transform: uppercase;
+            box-shadow: 0 3px 10px rgba(255,0,127,0.3);
+            transition: transform 0.2s;
+            animation: blinkText 1.2s infinite ease-in-out;
+        }
+        .mini-join-btn:active { transform: scale(0.95); }
+
+        @keyframes blinkText {
+            0% { opacity: 0.6; transform: scale(1); box-shadow: 0 3px 10px rgba(255,0,127,0.3); }
+            50% { opacity: 1; transform: scale(1.03); box-shadow: 0 5px 15px rgba(0, 240, 255, 0.6); background: linear-gradient(90deg, #8000ff, #ff007f); }
+            100% { opacity: 0.6; transform: scale(1); box-shadow: 0 3px 10px rgba(255,0,127,0.3); }
+        }
+
+        .call-popup {
+            position: fixed;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 380px;
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.85), rgba(10, 20, 70, 0.9), rgba(0, 240, 255, 0.7));
+            background-size: 300% 300%;
+            border-radius: 40px !important;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 15px 35px rgba(0, 240, 255, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+            z-index: 99999;
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 240, 255, 0.4);
+            will-change: transform;
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+        .call-popup.active {
+            bottom: 15px;
+            animation: popupGradient 4s ease infinite, phoneVibrate 0.5s ease infinite alternate;
+        }
+        @keyframes popupGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes phoneVibrate {
+            0% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            100% { transform: translateX(-50%) translateY(-1px) rotate(0.4deg); }
+        }
+        .call-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .call-icon-wrap {
+            width: 38px;
+            height: 38px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+        }
+        .call-icon-wrap svg {
+            width: 18px;
+            height: 18px;
+            fill: #00b0ff;
+        }
+        .call-text h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .call-status-box {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: #00ff66;
+            font-weight: 700;
+        }
+        .popup-timer-badge {
+            background: #fff;
+            color: #ff0055;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 900;
+            margin-left: 3px;
+        }
+        .join-call-btn {
+            background: #00ff66;
+            color: #100624;
+            padding: 9px 15px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 900;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 255, 102, 0.4);
+            text-transform: uppercase;
+            white-space: nowrap;
+            animation: phoneVibrate 0.6s infinite alternate;
+        }
+        .whatsapp-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+            z-index: 99998;
+            text-decoration: none;
+            transition: transform 0.3s ease, bottom 0.5s ease;
+            animation: whatsappPulse 2s infinite;
+        }
+        .whatsapp-widget.shift-up {
+            bottom: 95px;
+        }
+        @keyframes whatsappPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+        }
+        .whatsapp-widget svg {
+            width: 26px;
+            height: 26px;
+            fill: white;
+        }
+        .whatsapp-badge {
+            position: absolute;
+            top: -1px;
+            right: -1px;
+            width: 15px;
+            height: 15px;
+            background: #ff0055;
+            border-radius: 50%;
+            border: 2px solid #25D366;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="live-counter">
+            <div class="green-dot"></div>
+            <span><span id="header-counter">4,812</span> Members Active Now</span>
+        </div>
+        <div class="profile-container">
+            <div class="profile-bg-glow"></div>
+            <img src="https://unsplash.com" alt="Profile" class="profile-img">
+            <div class="profile-blur-overlay"></div>
+        </div>
+        <h2>Hey, I'm Active Online! 👋</h2>
+        <p class="tagline">Tap below to connect with me privately right now...</p>
+        
+        <!-- ওপরের ৫টি বাটন (আলাদা ট্র্যাকিং আইডি দেওয়া হয়েছে) -->
+        <div class="buttons-container">
+            <a href="#" class="smart-btn" data-link-id="btn1">🔒 Unlock My Private Album (18+)</a>
+            <a href="#" class="smart-btn" data-link-id="btn2">📍 Meet Me Tonight — Check Distance</a>
+            <a href="#" class="smart-btn" data-link-id="btn3">👀 See My Uncensored Feed</a>
+            <a href="#" class="smart-btn" data-link-id="btn4">👻 Unlock My Premium Snapchat Stories</a>
+            <a href="#" class="smart-btn" data-link-id="btn5">🎵 See My Hidden TikTok Viral Videos</a>
+        </div>
+
+        <div class="member-gallery-title">
+            <div class="green-dot"></div> Girls Online Right Now
+        </div>
+        <div class="members-grid">
+            <!-- মেম্বার ১ থেকে ১৪ (আলাদা আলাদা ট্র্যাকিং আইডি সেট করা) -->
+            <div class="member-card">
+                <div class="status-tag free">Free</div>
+                <div class="slider-box" id="slider1">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Chloe, 22</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl1">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag premium">Premium</div>
+                <div class="slider-box" id="slider2">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Sarah, 24</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl2">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag free">Free</div>
+                <div class="slider-box" id="slider3">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Emily, 21</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl3">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag premium">Premium</div>
+                <div class="slider-box" id="slider4">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Mia, 23</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl4">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag free">Free</div>
+                <div class="slider-box" id="slider5">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Jessica, 25</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl5">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag premium">Premium</div>
+                <div class="slider-box" id="slider6">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Amelie, 22</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl6">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag free">Free</div>
+                <div class="slider-box" id="slider7">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Lily, 20</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl7">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag premium">Premium</div>
+                <div class="slider-box" id="slider8">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Sofia, 26</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl8">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag free">Free</div>
+                <div class="slider-box" id="slider9">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Hannah, 22</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl9">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag premium">Premium</div>
+                <div class="slider-box" id="slider10">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Zoe, 23</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl10">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag free">Free</div>
+                <div class="slider-box" id="slider11">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Isabella, 21</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl11">Join Chat</a>
+            </div>
+            <div class="member-card">
+                <div class="status-tag premium">Premium</div>
+                <div class="slider-box" id="slider12">
+                    <img src="https://unsplash.com" class="active">
+                    <img src="https://unsplash.com">
+                </div>
+                <div class="member-name"><div class="green-dot"></div> Grace, 24</div>
+                <a href="#" class="mini-join-btn" data-link-id="girl12">Join Chat</a>
+            </div>
+```html
+    <!-- ভিডিও কল সেকশন -->
+    <div class="call-popup" id="incomingCallPopup">
+        <div class="call-info">
+            <div class="call-icon-wrap">
+                <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            </div>
+            <div class="call-text">
+                <h4>Incoming Video Call</h4>
+                <div class="call-status-box">
+                    <div class="green-dot"></div>
+                    <span>Live (<span id="popup-counter">245</span>)</span>
+                    <span class="popup-timer-badge" id="callCountdown">Ending 06s</span>
+                </div>
+            </div>
+        </div>
+        <a href="#" class="join-call-btn" data-link-id="videoCall">Join Call Now</a>
+    </div>
+    
+    <!-- হোয়াটসঅ্যাপ উইজেট -->
+    <a href="#" class="whatsapp-widget" id="whatsappWidget" data-link-id="whatsApp">
+        <div class="whatsapp-badge"></div>
+        <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.966 0c3.178.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.239 3.48 8.421-.003 6.615-5.34 11.962-11.91 11.962-1.996-.001-3.959-.5-5.709-1.448L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.623-1.023-5.086-2.885-6.948C16.528 2.015 14.077 1 11.493 1 6.058 1 1.632 5.371 1.629 10.8c-.001 1.642.453 3.241 1.314 4.66l-.99 3.613 3.703-.977zM17.47 15.2c-.322-.16-.1.905-.323-.162l-.972-.485c-.22-.11-.38-.16-.56.11l-.79 1.1c-.15.21-.3.24-.62.08-1.54-.775-2.67-1.91-3.41-3.19-.11-.19-.01-.3.08-.41l.6-.72c.1-.12.13-.2.2-.33.07-.13.03-.25-.02-.36l-.79-1.9c-.215-.52-.44-.45-.6-.46l-.52-.01c-.18 0-.47.07-.72.34-.25.27-.95.93-.95 2.27s.98 2.62 1.11 2.8c.14.18 1.93 2.94 4.67 4.12.65.28 1.16.45 1.56.57.65.2 1.25.17 1.72.1.53-.08 1.62-.66 1.85-1.31.23-.65.23-1.21.16-1.33-.08-.1-.23-.17-.56-.34z"/></svg>
+    </a>
+
+    <script>
+        // ১. লাইভ মেম্বার ডাইনামিক কাউন্টার
+        let mainUserCount = 4812;
+        let popupUserCount = 245;
+        setInterval(() => {
+            let changeMain = Math.floor(Math.random() * 8) - 3;
+            mainUserCount += changeMain;
+            if(mainUserCount < 4700) mainUserCount = 4800;
+            document.getElementById('header-counter').innerText = mainUserCount.toLocaleString();
+            let changePopup = Math.floor(Math.random() * 5) - 2;
+            popupUserCount += changePopup;
+            if(popupUserCount < 200) popupUserCount = 230;
+            document.getElementById('popup-counter').innerText = popupUserCount;
+        }, 2500);
+
+        // ২. ১৪টি ইমেজ স্লাইডার লজিক
+        function initSlider(sliderId) {
+            const container = document.getElementById(sliderId);
+            if(!container) return;
+            const images = container.getElementsByTagName('img');
+            let index = 0;
+            setInterval(() => {
+                images[index].classList.remove('active');
+                index = (index + 1) % images.length;
+                images[index].classList.add('active');
+            }, 3000 + Math.floor(Math.random() * 1500));
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            for(let i = 1; i <= 14; i++) { initSlider('slider' + i); }
+        });
+
+        // ৩. ইনকামিং কল লুপ টাইমার
+        const callPopup = document.getElementById('incomingCallPopup');
+        const whatsappWidget = document.getElementById('whatsappWidget');
+        const countdownElem = document.getElementById('callCountdown');
+        let timerInterval;
+
+        function startPopupTimer() {
+            let timeLeft = 6;
+            countdownElem.innerText = `Ending 06s`;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if(timeLeft >= 0) { countdownElem.innerText = `Ending 0${timeLeft}s`; } 
+                else { clearInterval(timerInterval); }
+            }, 1000);
+        }
+
+        function triggerCallLoop() {
+            callPopup.classList.add('active');
+            whatsappWidget.classList.add('shift-up');
+            startPopupTimer();
+            setTimeout(() => {
+                callPopup.classList.remove('active');
+                whatsappWidget.classList.remove('shift-up');
+                clearInterval(timerInterval);
+                setTimeout(triggerCallLoop, 3000);
+            }, 6000);
+        }
+        window.addEventListener('DOMContentLoaded', () => { setTimeout(triggerCallLoop, 2000); });
+
+        // 🎯 ২১টি বাটনের জন্য আলাদা আলাদা স্মার্টলিঙ্ক ডাটাবেজ!
+        // ডাবল কোটেশন "" এর ভেতরে তোমার ভিন্ন ভিন্ন ট্র্যাকিং বা অফার লিঙ্কগুলো বসিয়ে দাও সোনা
+        const SMARTLINKS = {
+            // ওপরের ৫টি নিয়ন বাটন
+            "btn1": "https://your-smartlink-for-button1.com",
+            "btn2": "https://your-smartlink-for-button2.com",
+            "btn3": "https://your-smartlink-for-button3.com",
+            "btn4": "https://your-smartlink-for-button4.com",
+            "btn5": "https://your-smartlink-for-button5.com",
+
+            // স্পেশাল উইজেটস
+            "videoCall": "https://your-smartlink-for-videocall.com",
+            "whatsApp": "https://your-smartlink-for-whatsapp.com",
+
+            // নিচের ১৪ জন মেয়ের চ্যাট বাটন
+            "girl1": "https://smartlink-for-chloe22.com",
+            "girl2": "https://smartlink-for-sarah24.com",
+            "girl3": "https://smartlink-for-emily21.com",
+            "girl4": "https://smartlink-for-mia23.com",
+            "girl5": "https://smartlink-for-jessica25.com",
+            "girl6": "https://smartlink-for-amelie22.com",
+            "girl7": "https://smartlink-for-lily20.com",
+            "girl8": "https://smartlink-for-sofia26.com",
+            "girl9": "https://smartlink-for-hannah22.com",
+            "girl10": "https://smartlink-for-zoe23.com",
+            "girl11": "https://smartlink-for-isabella21.com",
+            "girl12": "https://smartlink-for-grace24.com",
+            "girl13": "https://smartlink-for-natalie25.com",
+            "girl14": "https://smartlink-for-maya22.com"
+        };
+
+        // ইউনিভার্সাল ডাইনামিক ক্লিক ট্র্যাকিং সিস্টেম
+        document.querySelectorAll('[data-link-id]').forEach(element => {
+            element.addEventListener('click', (e) => {
+                e.preventDefault();
+                const linkId = element.getAttribute('data-link-id');
+                const targetUrl = SMARTLINKS[linkId];
+                if(targetUrl && targetUrl !== "") {
+                    window.location.href = targetUrl;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
